@@ -129,8 +129,8 @@ class Money
       # Update all rates from openexchangerates JSON
       #
       # @return [Array] Array of exchange rates
-      def update_rates
-        exchange_rates.each do |exchange_rate|
+      def update_rates custom_url = nil
+        exchange_rates(custom_url).each do |exchange_rate|
           rate = exchange_rate.last
           currency = exchange_rate.first
           next unless Money::Currency.find(currency)
@@ -143,9 +143,9 @@ class Money
       # Can raise InvalidCache
       #
       # @return [Proc,File]
-      def save_rates
+      def save_rates custom_url = nil
         raise InvalidCache unless cache
-        text = read_from_url
+        text = read_from_url(custom_url)
         store_in_cache(text) if valid_rates?(text)
       rescue Errno::ENOENT
         raise InvalidCache
@@ -251,9 +251,9 @@ class Money
       # Read from url
       #
       # @return [String] JSON content
-      def read_from_url
+      def read_from_url custom_url = nil
         raise NoAppId if app_id.nil? || app_id.empty?
-        open(source_url).read
+        open(custom_url||source_url).read
       end
 
       # Check validity of rates response only for store in cache
@@ -273,8 +273,8 @@ class Money
       # Get expire rates, first from cache and then from url
       #
       # @return [Hash] key is country code (ISO 3166-1 alpha-3) value Float
-      def exchange_rates
-        doc = JSON.parse(read_from_cache || read_from_url)
+      def exchange_rates custom_url = nil
+        doc = JSON.parse(read_from_cache || read_from_url(custom_url))
         @oer_rates = doc['rates']
       end
 
